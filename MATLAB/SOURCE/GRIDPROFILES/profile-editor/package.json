@@ -1,0 +1,18 @@
+{
+  "name": "profile-editor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-gyp": "^5.0.3",
+    "parcel-bundler": "^1.12.3",
+    "regenerator-runtime": "^0.13.3",
+    "three": "^0.106.2"
+  }
+}
