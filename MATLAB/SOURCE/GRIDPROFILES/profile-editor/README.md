@@ -1,0 +1,1 @@
+Run `npm install` and `node node_modules/parcel-bundler/bin/cli.js index.html` to use this. When prompted for a file, choose `2010MES_...` and press the empty button to the right.

@@ -1,14 +1,15 @@
 			import 'regenerator-runtime/runtime';
 			import * as THREE from 'three';
+			import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 
-			var renderer, scene, camera, stats;
+			let renderer, scene, camera, controls;
 
-			var particles;
+			let particles;
 
-			var PARTICLE_SIZE = 20;
+			let PARTICLE_SIZE = 20;
 
-			var raycaster, intersects;
-			var mouse, INTERSECTED;
+			let raycaster, intersects;
+			let mouse, INTERSECTED;
 
             const file=document.files.inp;
             document.files.doit.onclick=async function(){
@@ -48,45 +49,47 @@ document.files.style.display='none';await init();animate();
 
 			async function init() {
 
-				var container = document.getElementById( 'container' );
+				let container = document.getElementById( 'container' );
 
 				scene = new THREE.Scene();
 
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-				camera.position.z = 250;
-
+				camera.position.z = 200;
+				camera.position.x=65;
+				camera.position.y=25;
+				controls=new OrbitControls(camera);
 				//
 
-                // var vertices = new THREE.BoxGeometry( 200, 200, 200, 16, 16, 16 ).vertices;
-                var vertices=await getVertices();
+                let vertices = new THREE.BoxGeometry( 200, 200, 200, 16, 16, 16 ).vertices;
+                // let vertices=await getVertices();
 
-				var positions = new Float32Array( vertices.length * 3 );
-				var colors = new Float32Array( vertices.length * 3 );
-				var sizes = new Float32Array( vertices.length );
+				let positions = new Float32Array( vertices.length * 3 );
+				let colors = new Float32Array( vertices.length * 3 );
+				let sizes = new Float32Array( vertices.length );
 
-				var vertex;
-				var color = new THREE.Color();
-				for ( var i = 0, l = vertices.length; i < l; i ++ ) {
+				let color = new THREE.Color();
+				for ( let i = 0, l = vertices.length; i < l; i ++ ) {
 
-                    [0,1,2].forEach(e=>{
-                        positions[i*3+e]=vertices[i][e];
-                    });
+					vertices[i].toArray(positions,i*3);
+                    // [0,1,2].forEach(e=>{
+                        // positions[i*3+e]=vertices[i][e];
+                    // });
 
-					color.setHSL( 0.01 + 0.1 * ( parseFloat(vertices[i][3])), 1.0, 0.5 );
+					color.setHSL( 0.01 + 0.1 * ( i), 1.0, 0.5 );
 					color.toArray( colors, i * 3 );
 
-					sizes[ i ] = vertices[i][3]==0?0:PARTICLE_SIZE * 0.5;
+					sizes[ i ] = PARTICLE_SIZE*0.5;//vertices[i][3]==0?0:PARTICLE_SIZE * 0.5;
 
 				}
 
-				var geometry = new THREE.BufferGeometry();
+				let geometry = new THREE.BufferGeometry();
 				geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
 				geometry.addAttribute( 'customColor', new THREE.BufferAttribute( colors, 3 ) );
 				geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
-
+				console.log(geometry);
 				//
 
-				var material = new THREE.ShaderMaterial( {
+				let material = new THREE.ShaderMaterial( {
 
 					uniforms: {
 						color: { value: new THREE.Color( 0xffffff ) },
@@ -104,6 +107,24 @@ document.files.style.display='none';await init();animate();
 				particles = new THREE.Points( geometry, material );
 				scene.add( particles );
 
+				const light=new THREE.PointLight(0xFFFFFF);
+				light.position.x=100;
+				light.position.y=30;
+				light.position.z=80;
+				scene.add(light);
+
+				const ambience=new THREE.AmbientLight(0x222222);
+				scene.add(ambience);
+
+				{
+					let cube=new THREE.CubeGeometry(20,20,20,50,250,50);
+					let material=new THREE.MeshLambertMaterial(
+						{
+						  color: 0xCC0000
+						});
+					let mesh=new THREE.Mesh(cube,material);
+					scene.add(mesh);
+				}
 				//
 
 				renderer = new THREE.WebGLRenderer();
@@ -146,8 +167,8 @@ document.files.style.display='none';await init();animate();
 
 				requestAnimationFrame( animate );
 
+				controls.update();
 				render();
-				stats.update();
 
 			}
 
@@ -156,8 +177,8 @@ document.files.style.display='none';await init();animate();
 				particles.rotation.x += 0.0005;
 				particles.rotation.y += 0.001;
 
-				var geometry = particles.geometry;
-				var attributes = geometry.attributes;
+				let geometry = particles.geometry;
+				let attributes = geometry.attributes;
 
 				raycaster.setFromCamera( mouse, camera );
 

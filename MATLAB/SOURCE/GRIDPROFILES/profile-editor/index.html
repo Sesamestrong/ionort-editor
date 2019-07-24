@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>three.js webgl - interactive particles</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<!-- <link type="text/css" rel="stylesheet" href="main.css"> -->
-	</head>
 
-	<body>
-		<div id="container"></div>
-        <form id="select" name="files">
-            <input type="file" name="inp"/>
-            <input type="button" name="doit"/>
-        </form>
-		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - interactive - particles</div>
+<head>
+	<title>three.js webgl - interactive particles</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
 
-		<script type="x-shader/x-vertex" id="vertexshader">
+<body>
+	<div id="container"></div>
+	<div id="info">
+		<form id="select" name="files">
+			<input type="file" name="inp" />
+			<input type="button" name="doit" />
+		</form>
+		<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - interactive - particles
+	</div>
 
-			attribute float size;
+	<script type="x-shader/x-vertex" id="vertexshader">
+
+		attribute float size;
 			attribute vec3 customColor;
 
 			varying vec3 vColor;
@@ -36,9 +39,9 @@
 
 		</script>
 
-		<script type="x-shader/x-fragment" id="fragmentshader">
+	<script type="x-shader/x-fragment" id="fragmentshader">
 
-			uniform vec3 color;
+		uniform vec3 color;
 			uniform sampler2D pointTexture;
 
 			varying vec3 vColor;
@@ -55,8 +58,8 @@
 
 		</script>
 
-        <script src="index.js"></script>
+	<script src="index.js"></script>
 
-	</body>
+</body>
 
 </html>
