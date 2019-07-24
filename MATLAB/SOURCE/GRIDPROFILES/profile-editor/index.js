@@ -1,8 +1,8 @@
-			import 'regenerator-runtime/runtime';
-			import * as THREE from 'three';
-			import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+			import * as THREE from'./three.module.js';
 
-			let renderer, scene, camera, controls;
+			import {OrbitControls} from './OrbitControls.js'
+
+			var renderer, scene, camera, stats, controls;
 
 			let particles;
 
@@ -34,8 +34,8 @@ document.files.style.display='none';await init();animate();
                                     [throwaway,x_point,z_point]=line.match(/lat:\s+(-?\d+\.\d+)\s+lon:\s+(-?\d+\.\d+)/);
                                 }
                                 else if(line.match(/^\d{3}\./)){
-                                    let density;
-                                    [y_point,density]=line.split(" ");
+                                    let density,throwaway,_;
+                                    [y_point,throwaway,_,density]=line.split(" ");
                                     vertices[index]=[x_point,y_point,z_point,density];
                                     index++;
                                 }
@@ -60,25 +60,26 @@ document.files.style.display='none';await init();animate();
 				controls=new OrbitControls(camera);
 				//
 
-                let vertices = new THREE.BoxGeometry( 200, 200, 200, 16, 16, 16 ).vertices;
-                // let vertices=await getVertices();
+//                 let vertices = new THREE.BoxGeometry( 200, 200, 200, 16, 16, 16 ).vertices;
+                let vertices=await getVertices();
 
 				let positions = new Float32Array( vertices.length * 3 );
 				let colors = new Float32Array( vertices.length * 3 );
 				let sizes = new Float32Array( vertices.length );
 
 				let color = new THREE.Color();
+				console.log(vertices);
 				for ( let i = 0, l = vertices.length; i < l; i ++ ) {
 
-					vertices[i].toArray(positions,i*3);
-                    // [0,1,2].forEach(e=>{
-                        // positions[i*3+e]=vertices[i][e];
-                    // });
+// 					vertices[i].toArray(positions,i*3);
+                    [0,1,2].forEach(e=>{
+                        positions[i*3+e]=vertices[i][e];
+                    });
 
-					color.setHSL( 0.01 + 0.1 * ( i), 1.0, 0.5 );
+					color.setHSL( 0.01 + 0.1 * ( vertices[i][3]), 1.0, 0.5 );
 					color.toArray( colors, i * 3 );
 
-					sizes[ i ] = PARTICLE_SIZE*0.5;//vertices[i][3]==0?0:PARTICLE_SIZE * 0.5;
+					sizes[ i ] = vertices[i][3]==0?0:PARTICLE_SIZE * 0.5;
 
 				}
 
@@ -93,7 +94,7 @@ document.files.style.display='none';await init();animate();
 
 					uniforms: {
 						color: { value: new THREE.Color( 0xffffff ) },
-						pointTexture: { value: new THREE.TextureLoader().load( "textures/sprites/disc.png" ) }
+						pointTexture: { value: new THREE.TextureLoader().load( "disc.png" ) }
 					},
 					vertexShader: document.getElementById( 'vertexshader' ).textContent,
 					fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
@@ -107,24 +108,24 @@ document.files.style.display='none';await init();animate();
 				particles = new THREE.Points( geometry, material );
 				scene.add( particles );
 
-				const light=new THREE.PointLight(0xFFFFFF);
-				light.position.x=100;
-				light.position.y=30;
-				light.position.z=80;
-				scene.add(light);
+// 				const light=new THREE.PointLight(0xFFFFFF);
+// 				light.position.x=100;
+// 				light.position.y=30;
+// 				light.position.z=80;
+// 				scene.add(light);
 
-				const ambience=new THREE.AmbientLight(0x222222);
-				scene.add(ambience);
+// 				const ambience=new THREE.AmbientLight(0x222222);
+// 				scene.add(ambience);
 
-				{
-					let cube=new THREE.CubeGeometry(20,20,20,50,250,50);
-					let material=new THREE.MeshLambertMaterial(
-						{
-						  color: 0xCC0000
-						});
-					let mesh=new THREE.Mesh(cube,material);
-					scene.add(mesh);
-				}
+// 				{
+// 					let cube=new THREE.CubeGeometry(20,20,20,50,250,50);
+// 					let material=new THREE.MeshLambertMaterial(
+// 						{
+// 						  color: 0xCC0000
+// 						});
+// 					let mesh=new THREE.Mesh(cube,material);
+// 					scene.add(mesh);
+// 				}
 				//
 
 				renderer = new THREE.WebGLRenderer();
@@ -138,6 +139,10 @@ document.files.style.display='none';await init();animate();
 				mouse = new THREE.Vector2();
 
 				//
+
+
+// 				stats = new Stats();
+// 				container.appendChild( stats.dom );
 
 				//
 
@@ -167,43 +172,43 @@ document.files.style.display='none';await init();animate();
 
 				requestAnimationFrame( animate );
 
-				controls.update();
 				render();
+// 				stats.update();
 
 			}
 
 			function render() {
 
-				particles.rotation.x += 0.0005;
-				particles.rotation.y += 0.001;
+// 				particles.rotation.x += 0.0005;
+// 				particles.rotation.y += 0.001;
 
-				let geometry = particles.geometry;
-				let attributes = geometry.attributes;
+				var geometry = particles.geometry;
+				var attributes = geometry.attributes;
 
 				raycaster.setFromCamera( mouse, camera );
 
 				intersects = raycaster.intersectObject( particles );
 
-				if ( intersects.length > 0 ) {
+// 				if ( intersects.length > 0 ) {
 
-					if ( INTERSECTED != intersects[ 0 ].index ) {
+// 					if ( INTERSECTED != intersects[ 0 ].index ) {
 
-						attributes.size.array[ INTERSECTED ] = PARTICLE_SIZE;
+// // 						attributes.size.array[ INTERSECTED ] = PARTICLE_SIZE;
 
-						INTERSECTED = intersects[ 0 ].index;
+// 						INTERSECTED = intersects[ 0 ].index;
 
-						attributes.size.array[ INTERSECTED ] = PARTICLE_SIZE * 1.25;
-						attributes.size.needsUpdate = true;
+// // 						attributes.size.array[ INTERSECTED ] = PARTICLE_SIZE * 1.25;
+// 						attributes.size.needsUpdate = true;
 
-					}
+// 					}
 
-				} else if ( INTERSECTED !== null ) {
+// 				} else if ( INTERSECTED !== null ) {
 
-					attributes.size.array[ INTERSECTED ] = PARTICLE_SIZE;
-					attributes.size.needsUpdate = true;
-					INTERSECTED = null;
+// 					attributes.size.array[ INTERSECTED ] = PARTICLE_SIZE;
+// 					attributes.size.needsUpdate = true;
+// 					INTERSECTED = null;
 
-				}
+// 				}
 
 				renderer.render( scene, camera );
 
