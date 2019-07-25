@@ -108,43 +108,15 @@ document.files.style.display='none';await init();animate();
 				particles = new THREE.Points( geometry, material );
 				scene.add( particles );
 
-// 				const light=new THREE.PointLight(0xFFFFFF);
-// 				light.position.x=100;
-// 				light.position.y=30;
-// 				light.position.z=80;
-// 				scene.add(light);
-
-// 				const ambience=new THREE.AmbientLight(0x222222);
-// 				scene.add(ambience);
-
-// 				{
-// 					let cube=new THREE.CubeGeometry(20,20,20,50,250,50);
-// 					let material=new THREE.MeshLambertMaterial(
-// 						{
-// 						  color: 0xCC0000
-// 						});
-// 					let mesh=new THREE.Mesh(cube,material);
-// 					scene.add(mesh);
-// 				}
-				//
-
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
 
-				//
 
 				raycaster = new THREE.Raycaster();
 				mouse = new THREE.Vector2();
 
-				//
-
-
-// 				stats = new Stats();
-// 				container.appendChild( stats.dom );
-
-				//
 
 				window.addEventListener( 'resize', onWindowResize, false );
 				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
@@ -179,8 +151,6 @@ document.files.style.display='none';await init();animate();
 
 			function render() {
 
-// 				particles.rotation.x += 0.0005;
-// 				particles.rotation.y += 0.001;
 
 				var geometry = particles.geometry;
 				var attributes = geometry.attributes;

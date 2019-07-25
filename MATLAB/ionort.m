@@ -1,127 +1,134 @@
-function ionort( default, ionort_model )
-%IONORT - Ionosphere Ray Tracing
-%   Detailed explanation goes here
+function ionort (default, ionort_model)
+% IONORT - Ionosphere Ray Tracing
+% Detailed explanation goes here
 
 format long;
 
-% Path delle librerie / funzioni aggiuntive
-path(path, 'lib');
-path(path, 'lib\export_fig');
+% Path of additional libraries / functions
+path (path, 'lib');
+path (path, 'lib export_fig');
 
 %
-main = struct2cell(default.main);
-options = struct2cell(default.options);
-parameters = struct2cell(default.parameters);
+main = struct2cell (default.main);
+options = struct2cell (default.options);
+parameters = struct2cell (default.parameters);
+main
+options
+parameters
+% Creation of the variable file necessary for the Fortran program
+fid = fopen ('source DATA_IN.txt', 'w');
+fprintf (fid, '% 10.10f n', str2double (main));
+fprintf (fid, '% 10.10f n', str2double (options));
+fprintf (fid, '% 10.10f n', str2double (parameters));
+fclose (fid);
 
-% Creazione del file di variabili necessario al programma Fortran
-fid = fopen('source\DATA_IN.txt','w');
-fprintf(fid, '%10.10f\n', str2double(main));
-fprintf(fid, '%10.10f\n', str2double(options));
-fprintf(fid, '%10.10f\n', str2double(parameters));
-fclose(fid);
+% Program execution ionort.exe in the 'source' folder
+oldFolder = cd ('source');
+[status, result] = system (['ionort_', ionort_model]);
+cd (oldFolder);
 
-% Esecuzione programma ionort.exe nella cartella 'source'
-oldFolder = cd('source');   
-[status,result] = system( ['ionort_', ionort_model] );
-cd(oldFolder);
+% Output conversion in numerical matrix
+coordinates = str2num (result);
 
-% Conversione output in matrice numerica
-coordinates = str2num(result);
+% Delete duplicates (rows with the same coordinates)
+coordinates (find (diff (coordinates,: 1)) == 0 & diff (coordinates (:, 2)) == 0 & diff (coordinates (:, 3)) == 0),:) = [];
 
-% Eliminazione dei duplicati (righe con uguali coordinate)
-coordinates( find( diff(coordinates(:,1) ) == 0 & diff(coordinates(:,2) ) == 0 & diff(coordinates(:,3) ) == 0 ), : ) = [];
+% Search for the special "0 0 0" coordinate: flag for closing each beam
+split_coordinates = find (coordinates (:, 1) == 0 & coordinates (:, 2) == 0 & coordinates (:, 3) == 0);
+split_coordinates
+% CYCLE FOR EVERY RAY FOUND
+for i = 0: length (split_coordinates) - 1
+    
+    if (length (split_coordinates) == 1)
+        % the radius is one, no need to divide it
+        coordinates = coordinates;
+    else
+        
+        if (i == 0)
+            start_coordinate = 1;
+        else
+            start_coordinate = split_coordinates (i) +1;
+        end
+        
+        if (length (split_coordinates) == i)
+            end_coordinate = length (coordinates);
+        else
+            end_coordinate = split_coordinates (i + 1);
+        end
+        
+        coordinates = coordinates (start_coordinate: end_coordinate,:);
+        
+    end
+    
+    % Special radius coordinates
+    % * NOTE: IONO SHOULD NOT BE - 1 *%
+    ray_ionoin = find (coordinates (:, 1) == 111.1 & coordinates (:, 3) == 1) - 1; % RAY IN THE IONOSPHERE
+    ray_apogee = find (coordinates (:, 1) == 111.1 & coordinates (:, 3) == 2) - 1; % APOGEE
+    ray_ionoout = find (coordinates (:, 1) == 111.1 & coordinates (:, 3) == 3) - 1; % RAY OUT THE IONOSPHERE
+    
+    % Special coordinates of critical cases
+    case_penetrate = find (coordinates (:, 1) == 222.2 & coordinates (:, 3) == 0); % RAY PENETRATE
+    case_closest = find (coordinates (:, 1) == 222.2 & coordinates (:, 3) == 1); % CLOSEST APPROACH: MIN. DIST.
+    case_reflection = find (coordinates (:, 1) == 222.2 & coordinates (:, 3) == 2); % GROUND REFLECTION
+    case_integration = find (coordinates (:, 1) == 222.2 & coordinates (:, 3) == 3); % INTEGRATION FAILURE
+    
+    % Special coordinates of critical cases
+    result_groupdelay = coordinates (find (coordinates,: 1) == 333.3 & coordinates (:, 3) == 1), 2); % GROUP DELAY
+    result_grouppath = coordinates (find (coordinates,: 1) == 333.3 & coordinates (:, 3) == 2), 2); % GROUP PATH
+    result_plasmafreq = coordinates (find (coordinates,: 1) == 333.3 & coordinates (:, 3) == 3), 2); % TRANSMITTER IN EVANESCENT REGION: CRITICAL PLASMA FREQUENCY
 
-% Ricerca della coordinata speciale "0 0 0": flag di chiusura di ogni raggio
-split_coordinates = find( coordinates(:,1) == 0 & coordinates(:,2) == 0 & coordinates(:,3) == 0 );
+    % Deleting rows with particular values
+    % OPTIMIZABLE: I already know which lines to remove
+    coordinates (find (coordinates,: 1) == 0 & coordinates (:, 2) == 0 & coordinates (:, 3) == 0), :) = [];
+    coordinates (find (coordinates (:, 1) == 111.1), :) = [];
+    coordinates (find (coordinates (:, 1) == 222.2), :) = [];
+    coordinates (find (coordinates (:, 1) == 333.3), :) = [];
+    
+    % correction due to displacement of the coordinates after
+    % the elimination of special points.
+    if (~ isempty (ray_ionoin))
+        if (~ isempty (ray_apogee)) ray_apogee = ray_apogee - 1; end
+        if (~ isempty (ray_ionoout)) ray_ionoout = ray_ionoout - 2; end
+    end
+    if (~ isempty (ray_apogee))
+        if (~ isempty (ray_ionoout)) ray_ionoout = ray_ionoout - 1; end
+    end
+    
+    % REMARKABLE CASE critical plasma frequency: the beam does not start
+    if (~ isempty (result_plasmafreq))
+        
+        doPlot = false;
+        
+        h = findobj ('Tag', 'result_plasmafreq');
+        set (h, 'String', result_plasmafreq);
+        
+    else
+        
+        doPlot = true;
 
-% CICLO PER OGNI RAGGIO TROVATO
-for i = 0 : length( split_coordinates ) - 1
-    
-    if ( length( split_coordinates ) == 1 )
-        % il raggio è uno solo, non serve dividerlo
-        coordinate = coordinates;
-    else
-        
-        if ( i == 0 )
-            start_coordinate = 1;
-        else
-            start_coordinate = split_coordinates(i)+1;
-        end
-        
-        if ( length( split_coordinates ) == i )
-            end_coordinate = length( coordinates );
-        else
-            end_coordinate = split_coordinates(i+1);
-        end
-        
-        coordinate = coordinates( start_coordinate : end_coordinate, : );
-        
-    end
-    
-    % Coordinate speciali del raggio
-    %* NOTA: IONO IN NON DOVREBBE ESSERE - 1 *%
-    ray_ionoin = find(coordinate(:,1) == 111.1 & coordinate(:,3) == 1) - 1; % RAY IN THE IONOSPHERE
-    ray_apogee = find(coordinate(:,1) == 111.1 & coordinate(:,3) == 2) - 1; % APOGEE
-    ray_ionoout = find(coordinate(:,1) == 111.1 & coordinate(:,3) == 3) - 1; % RAY OUT THE IONOSPHERE
-    
-    % Coordinate speciali dei casi critici
-    case_penetrate = find(coordinate(:,1) == 222.2 & coordinate(:,3) == 0); % RAY PENETRATE
-    case_closest = find(coordinate(:,1) == 222.2 & coordinate(:,3) == 1); % CLOSEST APPROACH : MIN. DIST.
-    case_reflection = find(coordinate(:,1) == 222.2 & coordinate(:,3) == 2); % GROUND REFLECTION
-    case_integration = find(coordinate(:,1) == 222.2 & coordinate(:,3) == 3); % INTEGRATION FAILURE
-    
-    % Coordinate speciali dei casi critici
-    result_groupdelay = coordinate( find(coordinate(:,1) == 333.3 & coordinate(:,3) == 1), 2 ); % GROUP DELAY
-    result_grouppath = coordinate( find(coordinate(:,1) == 333.3 & coordinate(:,3) == 2), 2 ); % GROUP PATH
-    result_plasmafreq = coordinate( find(coordinate(:,1) == 333.3 & coordinate(:,3) == 3), 2 ); % TRANSMITTER IN EVANESCENT REGION: CRITICAL PLASMA FREQUENCY
+        % Column reading
+        rho = coordinates (:, 1);
+        phi = coordinates (:, 2);
+        theta = coordinates (:, 3);
 
-    % Eliminazione delle righe con valori particolari
-    % OTTIMIZZABILE: so già quali righe togliere
-    coordinate( find( coordinate(:,1) == 0 & coordinate(:,2) == 0 & coordinate(:,3) == 0 ), :) = [];
-    coordinate( find( coordinate(:,1) == 111.1 ), :) = [];
-    coordinate( find( coordinate(:,1) == 222.2 ), :) = [];
-    coordinate( find( coordinate(:,1) == 333.3 ), :) = [];
-    
-    % correzione dovuta allo spostamento delle coordinate dopo
-    % l'eliminazione dei punti speciali.
-    if( ~isempty( ray_ionoin ) )
-        if( ~isempty( ray_apogee ) ) ray_apogee = ray_apogee - 1; end
-        if( ~isempty( ray_ionoout ) ) ray_ionoout = ray_ionoout - 2; end
-    end
-    if( ~isempty( ray_apogee ) )
-        if( ~isempty( ray_ionoout ) ) ray_ionoout = ray_ionoout - 1; end
-    end
-    
-    % CASO NOTEVOLE frequenza di plasma critica: il raggio non parte
-    if( ~isempty( result_plasmafreq ) )
-        
-        doPlot = false;
-        
-        h = findobj('Tag', 'result_plasmafreq');
-        set(h, 'String', result_plasmafreq );
-        
-    else
-        
-        doPlot = true;
+        % Conversion and adaptation of values
+        radius = rho. * 1000;
+        lat = degrees (pi / 2 - phi);
+        lon = degrees (theta);
 
-        % Lettura colonne
-        rho = coordinate(:,1);
-        phi = coordinate(:,2);
-        theta = coordinate(:,3);
+        % Results: latitude, longitude, apogee (km), group delay (ms), group path (km)
+        h = findobj ('Tag', 'result_latitude');
+        set (h, 'String', lat (length (lat)));
 
-        % Conversione e adattamento dei valori
-        radius = rho .* 1000;
-        lat = degrees( pi/2 - phi );
-        lon = degrees( theta );
+        h = findobj ('Tag', 'result_longitude');
+        set (h, 'String', lon (length (lon)));
 
-        % Risultati: latitudine, longitudine, apogeo (km), ritardo di gruppo (ms), percorso di gruppo (km)
-        h = findobj('Tag', 'result_latitude');
-        set(h, 'String', lat( length(lat) ) );
+        if (~ isempty (ray_apogee))
+            h = findobj ('Tag', 'result_apogee');
+            set (h, 'String', coordinates (ray_apogee) - str2num (default.main.earthr));
+        end
 
-        h = findobj('Tag', 'result_longitude');
-        set(h, 'String', lon( length(lon) ) );
-
-        if( ~isempty( ray_apogee ) )
+        if (~ isempty ( ray_apogee ) )
             h = findobj('Tag', 'result_apogee');
             set(h, 'String', coordinate( ray_apogee ) - str2num( default.main.earthr ) );
         end

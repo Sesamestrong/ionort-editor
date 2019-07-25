@@ -472,6 +472,7 @@ else
 end
 
 default.main.ray = ionort_ray;
+'End ray'
 
 % Results reset
 set(findobj('Tag', 'result_latitude'), 'String', '-' );

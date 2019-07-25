@@ -1,0 +1,18 @@
+MAIN PARAMETERS 
+----------------------- 
+Latitude    = 41.8905 N 
+Longitude   = 12.4942 E 
+Frequency   = 12 MHz 
+Elevation   = 30 Degrees 
+Azimuth     = 0 Degrees 
+Transmitter = 0 km 
+Receiver    = 0 km 
+
+RESULTS 
+----------------------- 
+Latitude    = 54.2516 N 
+Longitude   = 12.4942 E 
+Apogee      = 233.4741 km 
+Group delay = 5.5344 ms 
+Group path  = 1659.175 km 
+
